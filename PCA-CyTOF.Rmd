@@ -1,0 +1,28 @@
+Interactive Visualization of CyTOF Data
+========================================================
+
+```{r setup, echo=FALSE}
+library(rgl)
+knit_hooks$set(webgl = hook_webgl)
+opts_knit$set(upload.fun = imgur_upload, base.url = NULL) # upload all images to imgur.com
+```
+
+
+This report produces a 3D visualization of the CD8+ T-cell subsets from [Newell et al. (2012)](http://www.ncbi.nlm.nih.gov/pubmed/22265676) using principal components analysis (PCA).
+
+The CD8+ cells for a single sample have been overlaid with the following cellular subpopulations:
+
+* Naive (Green)
+* Short-lived Effector (Red)
+* Central Memory (Orange)
+* Effector Memory (Blue)
+
+The CD8+ cells have been faded so that the subsets are easier to see.
+
+```{r webgl=TRUE, echo=FALSE, fig.width=12, fig.height=12}
+load("cache/PCA-CyTOF.RData")
+
+plot3d(pca_original, alpha = 0.15)
+plot3d(pca_subsets, col = as.character(plot_colors), add = TRUE)
+```
+

@@ -1,8 +1,6 @@
 Interactive Visualization of CyTOF Data
 ========================================================
 ```{r setup,echo=FALSE}
-opts_knit$set(upload.fun = imgur_upload, base.url = NULL) # upload all images to imgur.com
-
 hook_webgl2<-function (before, options, envir) 
 {
     library(rgl)

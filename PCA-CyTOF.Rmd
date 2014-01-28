@@ -1,28 +1,53 @@
 Interactive Visualization of CyTOF Data
 ========================================================
-
-```{r setup, echo=FALSE}
-library(rgl)
-knit_hooks$set(webgl = hook_webgl)
+```{r setup,echo=FALSE}
 opts_knit$set(upload.fun = imgur_upload, base.url = NULL) # upload all images to imgur.com
+
+hook_webgl2<-function (before, options, envir) 
+{
+    library(rgl)
+    if (before || rgl.cur() == 0) 
+        return()
+    name = tempfile("rgl", ".", ".html")
+    on.exit(unlink(name))
+    par3d(windowRect = 100 + options$dpi * c(0, 0, options$fig.width, 
+        options$fig.height))
+    Sys.sleep(0.05)
+    prefix = gsub("[^[:alnum:]]", "_", options$label)
+    prefix = sub("^([^[:alpha:]])", "_\\1", prefix)
+    writeLines(sprintf(c("%%%sWebGL%%", "<script>%swebGLStart();</script>"), 
+        prefix), tpl <- tempfile())
+    writeWebGL(dir = dirname(name), filename = name, template = tpl, 
+        prefix = prefix)
+    cm<-readLines("CanvasMatrix.js") #embed CanvasMatrix.js in the html
+    res = readLines(name)
+    res = res[!grepl("^\\s*$", res)]
+    repme<-gsub("src=\"CanvasMatrix.js\"","",res[grepl("src=\"CanvasMatrix.js\"",res)])
+    repme<-gsub("><",paste0(" >\n",cm,"\n<"),repme)
+    res[grepl("src=\"CanvasMatrix.js\"",res)] = repme
+       #rewrite the snapshot url.
+       #snapshots aren't working correctly due to rgl or driver bug.
+    res[grepl(sprintf("src=\"%ssnapshot.png\"",prefix),res)] = gsub(paste0(prefix,"snapshot.png"),paste0("$%7Bhrefout:",sprintf("%ssnapshot.png",prefix),"%7D"),res[grepl(sprintf("src=\"%ssnapshot.png\"",prefix),res)])
+    paste(gsub("^\\s*<", "<", res), collapse = "\n")
+}
+   
+knit_hooks$set(webgl2 = hook_webgl2)
 ```
-
-
+ 
 This report produces a 3D visualization of the CD8+ T-cell subsets from [Newell et al. (2012)](http://www.ncbi.nlm.nih.gov/pubmed/22265676) using principal components analysis (PCA).
-
+ 
 The CD8+ cells for a single sample have been overlaid with the following cellular subpopulations:
-
-* Naive (Green)
-* Short-lived Effector (Red)
-* Central Memory (Orange)
-* Effector Memory (Blue)
-
+ 
+* <font color='green'>Naive</font>
+* <font color='red'>Short-lived Effector</font>
+* <font color='orange'>Central Memory</font>
+* <font color='blue'>Effector Memory</font>
+ 
 The CD8+ cells have been faded so that the subsets are easier to see.
-
-```{r webgl=TRUE, echo=FALSE, fig.width=12, fig.height=12}
-load("cache/PCA-CyTOF.RData")
+ 
+```{r webgl2=TRUE, echo=FALSE, fig.width=12, fig.height=12}
+load( file.path( labkey.file.root, 'rawdata', 'PCA-CyTOF.RData' ) ) # load("cache/PCA-CyTOF.RData")
 
 plot3d(pca_original, alpha = 0.15)
 plot3d(pca_subsets, col = as.character(plot_colors), add = TRUE)
 ```
-
